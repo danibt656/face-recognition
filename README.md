@@ -1,6 +1,10 @@
 # face recognition
 
-This is a couple of tests for trying to make a facial recognition program that correctly classifies different people's faces
+Just a couple of tests for trying to make a facial recognition program that correctly classifies different people's faces
+
+<div style='text-align: center;' align='center'>
+    <img style='max-heigth: 200px;' src='./example.png'/>
+</div>
 
 ## Installation
 
@@ -10,6 +14,8 @@ Before anything can run, you need to create a Python virtual environment & insta
 $ python -m venv env
 $ pip install -r requirements.txt
 ```
+
+Note: for installing the *dlib* library, follow [this tutorial](https://www.youtube.com/watch?v=eaEndTeUiSU&ab_channel=crazzylearners).
 
 ## Usage
 

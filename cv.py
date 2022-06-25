@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import pickle
+import dlib
 
 # Learning how to use the OpenCV library for AI face recognition
 # Author: Daniel Barahona 
@@ -10,66 +11,129 @@ import pickle
 LABELS_FILENAME = "train/labels.pickle"
 TRAIN_FILENAME = "train/train.yml"
 
-face_cascade = cv2.CascadeClassifier('./cascades/data/haarcascade_frontalface_default.xml')
+C_GREEN = (0,255,0)
+C_BLUE = (255,0,0)
+C_RED = (0,0,255)
+C_WHITE = (255,255,255)
+
+# OpenCV detector
+face_cascade = cv2.CascadeClassifier('./cascades/data/haarcascade_frontalface_alt.xml')
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 recognizer.read(TRAIN_FILENAME)
 
-eye_cascade = cv2.CascadeClassifier('./cascades/data/haarcascade_eye.xml')
+# dlib detector
+dlib_det = dlib.get_frontal_face_detector()
+# landmarks predictor
+lmark = dlib.shape_predictor('./train/shape_predictor_68_face_landmarks.dat')
 
 labels = {'person': 1}
 with open(LABELS_FILENAME, 'rb') as f:
     og_labels = pickle.load(f)
     labels = {v:k for k,v in og_labels.items()}
 
-cap = cv2.VideoCapture(0)
-if not cap.isOpened:
-    print('--(!)Error opening video capture')
-    exit(0)
+# Convert a boundary box to a rectangle in dlib's format
+def bb_to_rect(x, y, w, h):
+    left = x
+    top = y
+    right = w + x
+    bottom = h + x
 
-i=0
+    return dlib.rectangle(left, top, right, bottom)
 
-while True:
-    # Capture frame
-    _, frame = cap.read()
+# Convert a dlib rectangle into a boundary box
+def rect_to_bb(rect):
+    x = rect.left()
+    y = rect.top()
+    w = rect.right() - x
+    h = rect.bottom() - y
 
-    # adjusted = cv2.convertScaleAbs(frame, alpha=2.0, beta=0) # contrast
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.equalizeHist(gray)
+    return (x, y, w, h)
 
-    # detect faces
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
-    for (x,y,w,h) in faces:
-        # print(f'ROI:\t{x}\t{y}\t{w}\t{h}')
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_color = frame[y:y+h, x:x+w]
+# Convert a dlib shape into a 68 (x,y) coordinates numpy array
+def shape_to_np(shape, dtype='int'):
+    coords = np.zeros((68,2), dtype=dtype)
+    for i in range(0, 68):
+        coords[i] = (shape.part(i).x, shape.part(i).y)
 
-        # face recognizer model
-        id_, confidence = recognizer.predict(roi_gray)
-        if confidence >= 45 and confidence <= 85:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(frame, labels[id_], (x,y-15), font, 1, (255,255,255), 2)
+    return coords
 
-        # img_item = f"faces/dani/{i}.png"
-        # cv2.imwrite(img_item, roi_color)
-        # i += 1
+# main function
+def main():
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened:
+        print('--(!)Error opening video capture')
+        exit(0)
 
-        # Draw a rectangle on top of the face
-        cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
+    while True:
+        # Capture frame
+        _, frame = cap.read()
+        frame =  cv2.flip(frame, 1)
 
-        # In each face, detect eyes
-        eyes = eye_cascade.detectMultiScale(roi_gray)
-        for (ex, ey, ew, eh) in eyes:
-            eye_center = (x + ex + ew//2, y + ey + eh//2)
-            radius = int(round((ew + eh)*0.25))
-            frame = cv2.circle(frame, eye_center, radius, (0,255,0 ), 4)
+        # convert to grayscale & equalize contrast
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.equalizeHist(gray)
 
+        # detect faces...
+        # ... using opencv cascade detector
+        # faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
+        # for (x,y,w,h) in faces:
+        #     rect = bb_to_rect(x,y,w,h)
+            
+        #     # Draw a rectangle on top of the face
+        #     cv2.rectangle(frame, (x,y), (x+w, y+h), C_GREEN, 2)
 
-    # Display frame
-    cv2.imshow('face detector', frame)
+        #     # Get face region of interest (roi)
+        #     roi_gray = gray[y:y+h, x:x+w]
 
-    # Quit key
-    if cv2.waitKey(20) & 0xFF == ord('q'):
-        break
+        #     shape = lmark(gray, rect)
+        #     shape = shape_to_np(shape)
 
-cap.release()
-cv2.destroyAllWindows()
+        #     # draw facial landmarks
+        #     for (sx,sy) in shape:
+        #         cv2.circle(frame, (sx,sy), 1, C_RED, -1)
+
+        #     # face recognizer model
+        #     id_, confidence = recognizer.predict(roi_gray)
+        #     if confidence >= 45 and confidence <= 85:
+        #         font = cv2.FONT_HERSHEY_SIMPLEX
+        #         text = f'{labels[id_]} {round(confidence, 1)}%'
+        #         cv2.putText(frame, text, (x,y-15), font, 1, C_WHITE, 2)
+    
+        #     # cv2.imwrite(f"faces/dani/{i}.png", roi_color)
+        
+        # ... using dlib's detector
+        faces = dlib_det(gray, 1)
+        for rect in faces:
+            # Draw a rectangle on top of the face
+            (x,y,w,h) = rect_to_bb(rect)
+            cv2.rectangle(frame, (x,y), (x+w, y+h), C_GREEN, 2)
+
+            # Get face region of interest (roi)
+            roi_gray = gray[y:y+h, x:x+w]
+
+            shape = lmark(gray, rect)
+            shape = shape_to_np(shape)
+
+            # draw facial landmarks
+            for (sx,sy) in shape:
+                cv2.circle(frame, (sx,sy), 1, C_RED, -1)
+
+            # face recognizer model
+            id_, confidence = recognizer.predict(roi_gray)
+            if confidence >= 45 and confidence <= 85:
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                text = f'{labels[id_]} {round(confidence, 1)}%'
+                cv2.putText(frame, text, (x,y-15), font, 1, C_WHITE, 2)
+
+        # Display frame
+        cv2.imshow('face detector', frame)
+
+        # Quit key
+        if cv2.waitKey(20) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()

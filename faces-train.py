@@ -7,7 +7,7 @@ import pickle
 # Browse through image directories with faces
 # then train a model to learn recognize those faces
 
-face_cascade = cv2.CascadeClassifier('./cascades/data/haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('./cascades/data/haarcascade_frontalface_alt.xml')
 recognizer = cv2.face.LBPHFaceRecognizer_create()
 
 LABELS_FILENAME = "train/labels.pickle"

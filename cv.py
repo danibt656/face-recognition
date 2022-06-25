@@ -4,6 +4,7 @@ from time import sleep
 import pickle
 import cv2
 import dlib
+import argparse
 
 # Learning how to use the OpenCV library for AI face recognition
 # Author: Daniel Barahona 
@@ -61,6 +62,11 @@ def shape_to_np(shape, dtype='int'):
 
 # main function
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-p", "--plot", required=False, action="store_true",
+        help="show prediction confidence plots after quit (q)")
+    args = vars(ap.parse_args())
+
     cap = cv2.VideoCapture(0)
     if not cap.isOpened:
         print('--(!)Error opening video capture')
@@ -155,20 +161,21 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-    # confidences/time plot
-    _, ax = plt.subplots(2)
-    for l,c in confs.items():
-        ax[0].plot(tss, c, label=l)
-    ax[0].legend(loc='lower right')
+    if args['plot']:
+        # confidences/time plot
+        _, ax = plt.subplots(2)
+        for l,c in confs.items():
+            ax[0].plot(tss, c, label=l)
+        ax[0].legend(loc='lower right')
 
-    # confidence-per-label plot
-    cc = list(confs.values())
-    avg_cc = []
-    for c in cc:
-        avg_cc.append(np.average(c))
-    ax[1].bar(list(confs.keys()), avg_cc, width=1, edgecolor='white', linewidth=0.7)
-    # show plots
-    plt.show()
+        # confidence-per-label plot
+        cc = list(confs.values())
+        avg_cc = []
+        for c in cc:
+            avg_cc.append(np.average(c))
+        ax[1].bar(list(confs.keys()), avg_cc, width=1, edgecolor='white', linewidth=0.7)
+        # show plots
+        plt.show()
 
 if __name__ == '__main__':
     main()

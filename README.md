@@ -14,6 +14,8 @@ And its performance in terms of predictions' confidence is this:
     <img style='max-heigth: 200px;' src='./examples/plot.png'/>
 </div>
 
+(as you can see, it gets a little bit confused :^])
+
 ## Installation
 
 Before anything can run, you need to create a Python virtual environment & install the dependencies:
@@ -23,7 +25,7 @@ $ python -m venv env
 $ pip install -r requirements.txt
 ```
 
-Note: for installing the *dlib* library, follow [this tutorial](https://www.youtube.com/watch?v=eaEndTeUiSU&ab_channel=crazzylearners).
+Note: for installing the *dlib* library, follow [this tutorial](https://www.youtube.com/watch?v=eaEndTeUiSU&ab_channel=crazzylearners) or [this article](https://pyimagesearch.com/2017/03/27/how-to-install-dlib/).
 
 ## Usage
 

@@ -5,13 +5,13 @@ Just a couple of tests for trying to make a facial recognition program that corr
 It currently looks like this:
 
 <div style='text-align: center;' align='center'>
-    <img style='max-heigth: 120px;' src='./examples/example_z.png'/>
+    <img style='max-heigth: 120px;' src='./examples/zel.png'/>
 </div>
 
 And its performance in terms of predictions' confidence is this:
 
 <div style='text-align: center;' align='center'>
-    <img style='max-heigth: 200px;' src='./examples/example_plot.png'/>
+    <img style='max-heigth: 200px;' src='./examples/plot.png'/>
 </div>
 
 ## Installation

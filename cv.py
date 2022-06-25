@@ -1,6 +1,8 @@
 import numpy as np
-import cv2
+import matplotlib.pyplot as plt
+from time import sleep
 import pickle
+import cv2
 import dlib
 
 # Learning how to use the OpenCV library for AI face recognition
@@ -64,6 +66,15 @@ def main():
         print('--(!)Error opening video capture')
         exit(0)
 
+    sleep(0.2)
+
+    # Plot confidences in each time instant
+    # confs is a dict containing each label and the corresponding array of
+    # confidences obtained per instant for that label
+    t = 0
+    tss = []
+    confs = {v:[] for _,v in labels.items()}
+    
     while True:
         # Capture frame
         _, frame = cap.read()
@@ -73,7 +84,8 @@ def main():
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
 
-        # detect faces...
+        # DETECT FACES ...
+
         # ... using opencv cascade detector
         # faces = face_cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=5)
         # for (x,y,w,h) in faces:
@@ -102,7 +114,7 @@ def main():
         #     # cv2.imwrite(f"faces/dani/{i}.png", roi_color)
         
         # ... using dlib's detector
-        faces = dlib_det(gray, 1)
+        faces = dlib_det(gray, 0)
         for rect in faces:
             # Draw a rectangle on top of the face
             (x,y,w,h) = rect_to_bb(rect)
@@ -111,19 +123,26 @@ def main():
             # Get face region of interest (roi)
             roi_gray = gray[y:y+h, x:x+w]
 
+            # draw facial landmarks
             shape = lmark(gray, rect)
             shape = shape_to_np(shape)
-
-            # draw facial landmarks
             for (sx,sy) in shape:
                 cv2.circle(frame, (sx,sy), 1, C_RED, -1)
 
             # face recognizer model
             id_, confidence = recognizer.predict(roi_gray)
-            if confidence >= 45 and confidence <= 85:
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                text = f'{labels[id_]} {round(confidence, 1)}%'
-                cv2.putText(frame, text, (x,y-15), font, 1, C_WHITE, 2)
+                # add data to plot's axis
+            for label,_ in confs.items():
+                if label == labels[id_]:
+                    confs[label].append(confidence)
+                else:
+                    confs[label].append(0)
+            tss.append(t)
+            t += 1
+            # Evaluate identity
+            # if confidence >= 45 and confidence <= 85:
+            text = f'{labels[id_]} {round(confidence, 1)}%'
+            cv2.putText(frame, text, (x,y-15), cv2.FONT_HERSHEY_SIMPLEX, 1, C_WHITE, 2)
 
         # Display frame
         cv2.imshow('face detector', frame)
@@ -132,8 +151,24 @@ def main():
         if cv2.waitKey(20) & 0xFF == ord('q'):
             break
 
+    # close open stuff
     cap.release()
     cv2.destroyAllWindows()
+
+    # confidences/time plot
+    _, ax = plt.subplots(2)
+    for l,c in confs.items():
+        ax[0].plot(tss, c, label=l)
+    ax[0].legend(loc='lower right')
+
+    # confidence-per-label plot
+    cc = list(confs.values())
+    avg_cc = []
+    for c in cc:
+        avg_cc.append(np.average(c))
+    ax[1].bar(list(confs.keys()), avg_cc, width=1, edgecolor='white', linewidth=0.7)
+    # show plots
+    plt.show()
 
 if __name__ == '__main__':
     main()

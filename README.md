@@ -2,6 +2,8 @@
 
 Just a couple of tests for trying to make a facial recognition program that correctly classifies different people's faces
 
+> Before you download, be advised! This repo contains the training image dataset, which is composed of more than 50 MBs of face pictures.
+
 It currently looks like this:
 
 <div style='text-align: center;' align='center'>
@@ -40,3 +42,11 @@ Then, go ahead and run the webcam-capture recognizer:
 ```
 $ python cv.py
 ```
+
+You can get statistic graphs generated after you quit the program if you run it with the `-p`/`--plot` flag:
+
+```
+$ python cv.py -p
+```
+
+(a full list of options can be obtained with the `-h`/`--help` flag)
